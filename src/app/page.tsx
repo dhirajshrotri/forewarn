@@ -9,14 +9,17 @@ import { useAuth } from '@/context/AuthContext';
 
 export default function Home() {
   const [scheduledTime, setScheduledTime] = useState("");
+  const [forecastTime, setForecastTime] = useState("");
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
-    const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!user) return alert("Authentication not ready. Please wait.");
+
+    if (!forecastTime) return alert("Please select a forecast date and time.")
 
     if (!scheduledTime) return alert("Please select a date and time.");
 
@@ -50,6 +53,7 @@ export default function Home() {
 
           // 4. Save Record to Cloud Firestore
           setStatusMessage("Scheduling alert in backend database...");
+          const forecastDate = new Date(forecastTime);
           const targetDate = new Date(scheduledTime);
 
           await addDoc(collection(db, "weather-alerts"), {
@@ -57,6 +61,7 @@ export default function Home() {
             lat: latitude,
             lon: longitude,
             fcmToken: fcmToken,
+            forecastTime: Timestamp.fromDate(forecastDate),
             notificationTime: Timestamp.fromDate(targetDate),
             createdAt: Timestamp.now(),
             status: "pending",
@@ -87,6 +92,17 @@ export default function Home() {
     buttonLabel = "Processing...";
   }
 
+    const formatDateTime = (date) => {
+      return date.toISOString().slice(0, 16);
+    };
+
+    const today = new Date();
+    const nextWeek = new Date();
+    nextWeek.setDate(today.getDate() + 7);
+
+    const minDateTime = formatDateTime(today);
+    const maxDateTime = formatDateTime(nextWeek);
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-slate-50 text-slate-800">
       <Head>
@@ -101,7 +117,23 @@ export default function Home() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-semibold mb-2" htmlFor="alert-time">
-              Notification Time
+              Forecast Time
+            </label>
+            <input
+              id="forecast-time"
+              type="datetime-local"
+              disabled={loading}
+              value={forecastTime}
+              min={minDateTime}
+              max={maxDateTime}
+              onChange={(e) => setForecastTime(e.target.value)}
+              className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-2" htmlFor="alert-time">
+              Notify Me At
             </label>
             <input
               id="alert-time"
