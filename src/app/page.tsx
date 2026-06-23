@@ -92,7 +92,7 @@ export default function Home() {
     buttonLabel = "Processing...";
   }
 
-    const formatDateTime = (date) => {
+    const formatDateTime = (date: Date) => {
       return date.toISOString().slice(0, 16);
     };
 
